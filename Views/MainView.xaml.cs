@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +25,17 @@ namespace ImageViewer.Views
         public MainView()
         {
             InitializeComponent();
+            
+            //フォルダ用ルートパスをアプリケーションコンフィグから取得
+            Application.Current.Properties["FolderPath"] = Properties.Settings.Default.RootPath;
+        }
+
+        //Windowを閉じるとき
+        void Window_Closing(object sender, CancelEventArgs e)
+        {
+            //フォルダ用ルートパスをアプリケーションコンフィグに保存
+            Properties.Settings.Default.RootPath = (string)Application.Current.Properties["FolderPath"];
+            Properties.Settings.Default.Save();
         }
     }
 }
