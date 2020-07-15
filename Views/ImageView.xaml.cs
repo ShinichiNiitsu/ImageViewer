@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImageViewer.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -14,9 +15,9 @@ namespace ImageViewer.Views
     /// </summary>
     public partial class ImageView : Page
     {
+
         private ObservableCollection<BitmapImage> imageArray = new ObservableCollection<BitmapImage>();
         private ObservableCollection<String> uriArray = new ObservableCollection<String>();
-
         public ObservableCollection<BitmapImage> ImageArray { get => imageArray; set => imageArray = value; }
 
         public ImageView()
@@ -64,52 +65,45 @@ namespace ImageViewer.Views
             }
         }
 
-        //TreViewの選択状態が変わったら
+        //TreViewの選択状態が変わったらListView更新
         private void SelectionChanged(object sender, RoutedPropertyChangedEventArgs<Object> e)
         {
-            if ( e.NewValue == null ) 
-            { 
-                return;
-            }
-            try {
+            if ( e.NewValue == null ) { return; }
+
+            try 
+            {
                 string strFolder = ((TreeViewItem)e.NewValue).ToString();
                 Console.WriteLine(strFolder);
                 List<String> imageList = GetImagesPath(strFolder);
-                //BitmapImage ThumbnailImage = null;
-                uriArray.Clear();
+                ListView_thumbnail.Items.Clear();
+                ImageView1.Source = null;
                 foreach (var item in imageList)
                 {
-                    //ThumbnailImage = createThumbnail(item, 30, 30);
-                    //ImageArray.Add(ThumbnailImage);
-                    uriArray.Add(item);
+                    PhotoData phData = new PhotoData();
+                    phData.FilePath = item;
+                    phData.Title = Path.GetFileName(item);
+                    phData.ImageData = createThumbnail(item,50,50);
+                    ListView_thumbnail.Items.Add(phData);
                 }
             }
             catch(Exception ex) {
                 Console.WriteLine(ex.Message);
             }
-
-            //ListViewに設定
-            //ListView_thumbnail.DataContext = imageArray;
-            ListView_thumbnail.DataContext = uriArray;
         }
 
-        //ListViewの選択状態が変わったら
+        //ListViewの選択状態が変わったらプレビュー更新
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Console.WriteLine("来た");
-            if (ListView_thumbnail.SelectedItem == null) return; // ListViewで何も選択されていない場合は何もしない
-            string item = (string)ListView_thumbnail.SelectedItem; // ListViewで選択されている項目を取り出す
-            SetImage(item);
+            if (ListView_thumbnail.SelectedItem == null) { return; }// ListViewで何も選択されていない場合は何もしない
+            PhotoData item = (PhotoData)ListView_thumbnail.SelectedItem; // ListViewで選択されている項目を取り出す
+            SetImage(item.FilePath);
         }
 
         //ImageViewに画像セット
         private bool SetImage(string filePath)
         {
             // パスが空
-            if (string.IsNullOrEmpty(filePath))
-            {
-                return false;
-            }
+            if (string.IsNullOrEmpty(filePath)){ return false; }
 
             var bmp = new BitmapImage();
             bmp.BeginInit();
@@ -132,27 +126,20 @@ namespace ImageViewer.Views
             var bmpImg = new BitmapImage();
             bmpImg.BeginInit();
 
-            // オプションその 1 : 読込元のファイルがロックされない。
+            // オプション : 読込元のファイルがロックされない。
             bmpImg.CacheOption = BitmapCacheOption.OnLoad;
+            bmpImg.CreateOptions = BitmapCreateOptions.None;
 
-            // オプションその 2 : decoded image の幅を指定できる。サムネイル用に小さく表示する場合などのメモリ節約に有効。
+            // オプション : decoded image の幅を指定できる。サムネイル用に小さく表示する場合などのメモリ節約に有効。
             bmpImg.DecodePixelWidth = w;
             bmpImg.DecodePixelHeight = h;
 
-            // オプションその 3 : わからん
-            bmpImg.CreateOptions = BitmapCreateOptions.None;
-
             bmpImg.UriSource = new Uri(filePath);
             bmpImg.EndInit();
+            bmpImg.Freeze();
 
             return bmpImg;
-
         }
-
-        //private System.Drawing.Image createThumbnail(string imgPath, int w, int h)
-        //{
-        //    return null;
-        //}
 
         private List<String> GetImagesPath(String folderName)
         {
@@ -187,12 +174,12 @@ namespace ImageViewer.Views
         {
             if (ListView_thumbnail.SelectedItem == null) return; // ListViewで何も選択されていない場合は何もしない
 
-            string item = (string)ListView_thumbnail.SelectedItem; // ListViewで選択されている項目を取り出す
+            PhotoData item = (PhotoData)ListView_thumbnail.SelectedItem; // ListViewで選択されている項目を取り出す
             
-            Application.Current.Properties["ImagePath"] = item;
+            Application.Current.Properties["ImagePath"] = item.FilePath;
 
             // Pageインスタンスを渡して遷移
-            var nextPage = new EditView(item);
+            var nextPage = new EditView(item.FilePath);
             NavigationService.Navigate(nextPage);
 
         }

@@ -10,10 +10,25 @@
 
     <Grid>
         <Grid HorizontalAlignment="Left" Height="520" Margin="10,10,0,0" VerticalAlignment="Top" Width="980">
-            <Image x:Name="ImageEdit1" HorizontalAlignment="Left" Height="500" Margin="10,10,0,0" VerticalAlignment="Top" Width="960"/>
+            <Image x:Name="ImageEdit1" Height="500" Margin="10,10,0,0" Width="960" MouseWheel="ImageEdit1_MouseWheel" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
+                <!--<Image.LayoutTransform>
+                    <RotateTransform Angle="{Binding RotateAngle}" />
+                </Image.LayoutTransform>-->
+            </Image>
         </Grid>
-        <Grid HorizontalAlignment="Left" Height="260" Margin="10,530,0,0" VerticalAlignment="Top" Width="525"/>
-        <Grid HorizontalAlignment="Left" Height="255" Margin="535,535,0,0" VerticalAlignment="Top" Width="455"/>
+        <Grid HorizontalAlignment="Left" Height="260" Margin="10,530,0,0" VerticalAlignment="Top" Width="525">
+            <ListView x:Name="ListView_ExifInfo" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="505" Grid.Column="2" Grid.Row="1">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="項目名" DisplayMemberBinding="{Binding ItemName}"/>
+                        <GridViewColumn Header="情報" DisplayMemberBinding="{Binding Data}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
+        <Grid HorizontalAlignment="Left" Height="255" Margin="535,535,0,0" VerticalAlignment="Top" Width="455">
+            <Button x:Name="Btn_Rotate" Content="回転" HorizontalAlignment="Left" Height="57" Margin="10,10,0,0" VerticalAlignment="Top" Width="68" Click="Rotate_Click"/>
+        </Grid>
 
     </Grid>
 </Page>

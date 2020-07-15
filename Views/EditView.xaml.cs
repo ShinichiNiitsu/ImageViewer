@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImageViewer.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,13 +21,19 @@ namespace ImageViewer.Views
     /// </summary>
     public partial class EditView : Page
     {
+        private string _ImageFilePath;
+        private BitmapImage _bmp;
+        private int _angleCount = 0;
+
         public EditView(string filePath)
         {
             InitializeComponent();
 
+            _ImageFilePath = filePath;
             //string filePath = (string)Application.Current.Properties["ImagePath"];
-            SetImage(filePath);
-            GetExif(filePath);
+            SetImage(_ImageFilePath);
+            GetExif(_ImageFilePath);
+            _angleCount = 0;
         }
 
         //ImageViewに画像セット
@@ -38,13 +45,13 @@ namespace ImageViewer.Views
                 return false;
             }
 
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.UriSource = new Uri(filePath);
-            bmp.EndInit();
+            _bmp = new BitmapImage();
+            _bmp.BeginInit();
+            _bmp.UriSource = new Uri(filePath);
+            _bmp.EndInit();
             // 画像設定
-            ImageEdit1.Source = bmp;
-            ImageEdit1.Stretch = Stretch.Fill;
+            ImageEdit1.Source = _bmp;
+            ImageEdit1.Stretch = Stretch.Uniform;
 
             // タイトルバーにファイル名設定
             this.Title = System.IO.Path.GetFileName(filePath);
@@ -63,27 +70,116 @@ namespace ImageViewer.Views
 
             //画像を読み込む
             System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(filePath);
-            
+
             //Exif情報を列挙する
             foreach (System.Drawing.Imaging.PropertyItem item in bmp.PropertyItems)
             {
-                //データの型を判断
-                if (item.Type == 2)
+                ExifInfoData exinfo = new ExifInfoData();
+                Console.WriteLine("{0:X}:{1}", item.Id, item.Type);
+                if (ImageViewModel.ConstExifTagDictionary.ContainsKey(item.Id)) 
                 {
-                    //ASCII文字の場合は、文字列に変換する
-                    string val = System.Text.Encoding.ASCII.GetString(item.Value);
-                    val = val.Trim(new char[] { '\0' });
+                    exinfo.ItemName = ImageViewModel.ConstExifTagDictionary[item.Id];
+                    string val = string.Empty;
+
+                    switch (item.Type)
+                    {
+                        case 2://ASCII 文字列
+                            val = System.Text.Encoding.ASCII.GetString(item.Value);
+                            break;
+                        case 3://符号なし short (16 ビット) 整数
+                            val = BitConverter.ToInt16(item.Value, 0).ToString();
+                            break;
+                        case 4://符号なし long (32 ビット) 整数
+                            val = BitConverter.ToInt32(item.Value, 0).ToString();
+                            break;
+                    }
+                    Console.WriteLine("{0:X}:{1}:{2}:{3}", item.Id, item.Type, val, exinfo.ItemName);
+                    exinfo.Data = val;
                     //表示する
-                    Console.WriteLine("{0:X}:{1}:{2}", item.Id, item.Type, val);
-                }
-                else
-                {
-                    //表示する
-                    Console.WriteLine("{0:X}:{1}:{2}", item.Id, item.Type, item.Len);
+                    ListView_ExifInfo.Items.Add(exinfo);
                 }
             }
             bmp.Dispose();
         }
 
+        //回転ボタン
+        private void Rotate_Click(object sender, RoutedEventArgs e)
+        {
+            _angleCount++;
+            if (_angleCount > 3)
+            {
+                _angleCount = 0;
+            }
+
+            int rotate = 0;
+            switch (_angleCount)
+            {
+                case 0:
+                    rotate = 0;
+                    break;
+                case 1:
+                    rotate = 90;
+                    break;
+                case 2:
+                    rotate = 180;
+                    break;
+                case 3:
+                    rotate = 270;
+                    break;
+                default:
+                    break;
+            }
+
+            var transformedBitmap = new TransformedBitmap();
+            transformedBitmap.BeginInit();
+            transformedBitmap.Source = _bmp;
+            transformedBitmap.Transform = new RotateTransform(rotate);
+            transformedBitmap.EndInit();
+
+            // 画像設定
+            ImageEdit1.Source = transformedBitmap;
+        }
+
+        private void Btn_Expansion_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ImageEdit1_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // スケールの値を変えることでホイールを動かした時の拡大率を制御できます
+            const double scale = 1.2;
+
+            var matrix = ImageEdit1.RenderTransform.Value;
+            if (e.Delta > 0)
+            {
+                // 拡大処理
+                matrix.ScaleAt(scale, scale, e.GetPosition(this).X, e.GetPosition(this).Y);
+            }
+            else
+            {
+                // 縮小処理
+                matrix.ScaleAt(1.0 / scale, 1.0 / scale, e.GetPosition(this).X, e.GetPosition(this).Y);
+            }
+
+            ImageEdit1.RenderTransform = new MatrixTransform(matrix);
+        }
+
+        //
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            //Escキーで戻す
+            if (e.Key == Key.Escape)
+            {
+                var matrix = ImageEdit1.RenderTransform.Value;
+                matrix.M11 = 1.0;
+                matrix.M12 = 0.0;
+                matrix.M21 = 0.0;
+                matrix.M22 = 1.0;
+                matrix.OffsetX = 0.0;
+                matrix.OffsetY = 0.0;
+                ImageEdit1.RenderTransform = new MatrixTransform(matrix);
+            }
+        }
     }
 }
