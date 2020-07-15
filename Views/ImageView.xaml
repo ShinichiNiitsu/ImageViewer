@@ -4,31 +4,45 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ImageViewer.Views"
-      mc:Ignorable="d" 
-      d:DesignHeight="800" d:DesignWidth="1000"
-      Title="ImageView">
+      mc:Ignorable="d" d:DesignWidth="1000"
+      Title="ImageView" Height="769.648" >
 
-    <Grid>
-        <Grid HorizontalAlignment="Left" Height="759" Margin="10,0,0,0" VerticalAlignment="Top" Width="330">
+    <Grid Margin="0,0,-20,54">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="0*"/>
+        </Grid.RowDefinitions>
+        <Grid HorizontalAlignment="Left" Height="690" Margin="10,0,0,0" VerticalAlignment="Top" Width="330">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="119*"/>
                 <ColumnDefinition Width="131*"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="Text_Folder" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="25" Margin="0,10,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="295"/>
-            <Button x:Name="Btn_Folder" Content="..." Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="143,10,0,0" VerticalAlignment="Top" Width="20"/>
-            <TreeView x:Name="TreeView_Folder" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="709" Margin="10,40,0,0" VerticalAlignment="Top" Width="310"/>
+            <TextBox x:Name="Text_Folder" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="25" Margin="0,10,0,0" TextWrapping="Wrap" Text="フォルダー選択" VerticalAlignment="Top" Width="295"/>
+            <Button x:Name="Btn_Folder" Content="..." Command="{Binding FindFolder_Click}" Grid.Column="1" Height="25" Margin="143,10,10,0" VerticalAlignment="Top" Click="Btn_Folder_Click"/>
+            <TreeView x:Name="TreeView_Folder" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="10,40,0,10" Width="310" SelectedItemChanged ="SelectionChanged" />
         </Grid>
         <Grid HorizontalAlignment="Left" Height="288" Margin="340,0,0,0" VerticalAlignment="Top" Width="642">
-            <ListView x:Name="ListView_thumbnail" HorizontalAlignment="Left" Height="258" Margin="10,10,0,0" VerticalAlignment="Top" Width="622">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn/>
-                    </GridView>
-                </ListView.View>
+            <ListView x:Name="ListView_thumbnail" HorizontalAlignment="Left" Height="258" Margin="10,10,0,0" VerticalAlignment="Top" Width="622" SelectionMode="Extended" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ListView_SelectionChanged" >
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="5"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <Image Source="{Binding ImageData}" HorizontalAlignment="Stretch" VerticalAlignment="Top" Stretch="UniformToFill" />
+                            <TextBlock Text="{Binding Title}" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
             </ListView>
         </Grid>
         <Grid HorizontalAlignment="Left" Height="466" Margin="345,293,0,0" VerticalAlignment="Top" Width="637">
-            <Image HorizontalAlignment="Left" Height="446" Margin="10,10,0,0" VerticalAlignment="Top" Width="617"/>
+            <Image x:Name="ImageView1" HorizontalAlignment="Left" Height="446" Margin="10,10,0,0" VerticalAlignment="Top" Width="617"/>
+        </Grid>
+        <Grid HorizontalAlignment="Left" Height="31" Margin="10,693,0,0" VerticalAlignment="Top" Width="330">
+            <Button x:Name="Btn_Edit" Content="Edit" HorizontalAlignment="Left" Margin="10,0,0,0" Width="310" Click="Edit_Click" Height="21" VerticalAlignment="Top"/>
         </Grid>
 
     </Grid>
