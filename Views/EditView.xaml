@@ -10,11 +10,13 @@
 
     <Grid>
         <Grid HorizontalAlignment="Left" Height="520" Margin="10,10,0,0" VerticalAlignment="Top" Width="980">
-            <Image x:Name="ImageEdit1" Height="500" Margin="10,10,0,0" Width="960" MouseWheel="ImageEdit1_MouseWheel" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-                <!--<Image.LayoutTransform>
+            <ScrollViewer>
+                <Image x:Name="ImageEdit1" Height="500" Margin="10,10,0,0" Width="960" MouseWheel="ImageEdit1_MouseWheel" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
+                    <!--<Image.LayoutTransform>
                     <RotateTransform Angle="{Binding RotateAngle}" />
                 </Image.LayoutTransform>-->
-            </Image>
+                </Image>
+            </ScrollViewer>
         </Grid>
         <Grid HorizontalAlignment="Left" Height="260" Margin="10,530,0,0" VerticalAlignment="Top" Width="525">
             <ListView x:Name="ListView_ExifInfo" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="505" Grid.Column="2" Grid.Row="1">
@@ -27,7 +29,13 @@
             </ListView>
         </Grid>
         <Grid HorizontalAlignment="Left" Height="255" Margin="535,535,0,0" VerticalAlignment="Top" Width="455">
-            <Button x:Name="Btn_Rotate" Content="回転" HorizontalAlignment="Left" Height="57" Margin="10,10,0,0" VerticalAlignment="Top" Width="68" Click="Rotate_Click"/>
+            <Button x:Name="Btn_Rotate" Content="回転" HorizontalAlignment="Left" Height="52" Margin="10,10,0,0" VerticalAlignment="Top" Width="69" Click="Rotate_Click"/>
+            <Button Content="グレースケール" HorizontalAlignment="Left" Height="52" Margin="84,10,0,0" VerticalAlignment="Top" Width="69" Click="Button_Click"/>
+            <Button Content="セピア調" HorizontalAlignment="Left" Height="52" Margin="158,10,0,0" VerticalAlignment="Top" Width="69" Click="Button_Click_1"/>
+            <Button Content="顔認識" HorizontalAlignment="Left" Height="52" Margin="231,10,0,0" VerticalAlignment="Top" Width="69" Click="Button_Click_2"/>
+            <Button Content="切取" HorizontalAlignment="Left" Height="52" Margin="307,10,0,0" VerticalAlignment="Top" Width="69"/>
+            <Button Content="戻す" HorizontalAlignment="Left" Height="52" Margin="10,66,0,0" VerticalAlignment="Top" Width="69" Click="Button_Click_3"/>
+            <Button Content="保存" HorizontalAlignment="Left" VerticalAlignment="Top" Width="69" Margin="83,66,0,0" Height="52"/>
         </Grid>
 
     </Grid>

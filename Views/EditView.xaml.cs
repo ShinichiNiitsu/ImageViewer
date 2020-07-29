@@ -1,18 +1,13 @@
 ﻿using ImageViewer.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
+using System.Drawing;
 
 namespace ImageViewer.Views
 {
@@ -130,9 +125,14 @@ namespace ImageViewer.Views
                     break;
             }
 
+            BitmapImage bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(_ImageFilePath);
+            bmp.EndInit();
+
             var transformedBitmap = new TransformedBitmap();
             transformedBitmap.BeginInit();
-            transformedBitmap.Source = _bmp;
+            transformedBitmap.Source = bmp;
             transformedBitmap.Transform = new RotateTransform(rotate);
             transformedBitmap.EndInit();
 
@@ -180,6 +180,95 @@ namespace ImageViewer.Views
                 matrix.OffsetY = 0.0;
                 ImageEdit1.RenderTransform = new MatrixTransform(matrix);
             }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            //グレースケール変換
+            var src = new Mat(_ImageFilePath);
+            var dst = new Mat();
+            Cv2.CvtColor(src, dst, ColorConversionCodes.BGRA2GRAY);
+            System.Drawing.Bitmap hBitmap = dst.ToBitmap();
+            IntPtr handle = hBitmap.GetHbitmap();
+            var bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                handle,
+                System.IntPtr.Zero,
+                System.Windows.Int32Rect.Empty,
+                System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()
+            );
+            ImageEdit1.Source = bitmapSource;
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            Bitmap hBitmap = new Bitmap(_ImageFilePath);
+
+            //セピア調の画像の描画先となるImageオブジェクトを作成
+            Bitmap newImg = new Bitmap(hBitmap.Width, hBitmap.Height);
+
+            //newImgのGraphicsオブジェクトを取得
+            Graphics g = Graphics.FromImage(newImg);
+
+            //ColorMatrixオブジェクトの作成
+            //セピア調に変換するための行列を指定する
+            System.Drawing.Imaging.ColorMatrix cm =
+                new System.Drawing.Imaging.ColorMatrix(
+                    new float[][] {
+                new float[] {.393f, .349f, .272f, 0, 0},
+                new float[] {.769f, .686f, .534f, 0, 0},
+                new float[] {.189f, .168f, .131f, 0, 0},
+                new float[] {0, 0, 0, 1, 0},
+                new float[] {0, 0, 0, 0, 1}
+                    });
+            //ImageAttributesオブジェクトの作成
+            System.Drawing.Imaging.ImageAttributes ia = new System.Drawing.Imaging.ImageAttributes();
+            //ColorMatrixを設定する
+            ia.SetColorMatrix(cm);
+
+            //ImageAttributesを使用してセピア調に描画
+            g.DrawImage(hBitmap, new Rectangle(0, 0, hBitmap.Width, hBitmap.Height), 0, 0, hBitmap.Width, hBitmap.Height, GraphicsUnit.Pixel, ia);
+
+            //リソースを解放する
+            g.Dispose();
+
+            IntPtr handle = hBitmap.GetHbitmap();
+            var bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                handle,
+                System.IntPtr.Zero,
+                System.Windows.Int32Rect.Empty,
+                System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()
+            );
+
+            ImageEdit1.Source = bitmapSource;
+
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+
+            //顔の矩形を抽出
+            using (Mat mat = new Mat(_ImageFilePath))
+            {
+                // 分類機の用意
+                using (CascadeClassifier cascade = new CascadeClassifier(@"haarcascade_frontalface_default.xml"))
+                {
+                    foreach (OpenCvSharp.Rect rectFace in cascade.DetectMultiScale(mat))
+                    {
+                        // 見つかった場所に赤枠を表示
+                        OpenCvSharp.Rect rect = new OpenCvSharp.Rect(rectFace.X, rectFace.Y, rectFace.Width, rectFace.Height);
+                        Cv2.Rectangle(mat, rect, new OpenCvSharp.Scalar(0, 0, 255), 2);
+                    }
+                }
+
+                // ウィンドウに画像を表示
+                Cv2.ImShow("face_show", mat);
+            }
+
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            ImageEdit1.Source = _bmp;
         }
     }
 }
