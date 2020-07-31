@@ -286,7 +286,8 @@ namespace ImageViewer.Views
 
             // フィルターを設定します。
             // この設定は任意です。
-            dialog.Filter = "画像ファイル|*.jpg|*.png|*.bmp|全てのファイル(*.*)|*.*";
+            dialog.DefaultExt = ".jpg";
+            dialog.Filter = "JPEG|*.jpg|BMP|*.bmp|PNG|*.png"; ;
 
             // ファイル保存ダイアログを表示します。
             var result = dialog.ShowDialog() ?? false;
@@ -297,6 +298,35 @@ namespace ImageViewer.Views
                 // 終了します。
                 return;
             }
+
+            string extension = System.IO.Path.GetExtension(dialog.FileName).ToUpper();
+            
+            // ビットマップエンコーダー変数の宣言
+            BitmapEncoder enc = null;
+
+            switch (extension)
+            {
+                case ".BMP":
+                    enc = new BmpBitmapEncoder();
+                    break;
+                case ".JPG":
+                    enc = new JpegBitmapEncoder();
+                    break;
+                case ".PNG":
+                    enc = new PngBitmapEncoder();
+                    break;
+            }
+
+            if (enc != null)
+            { 
+                // BitmapSourceを保存する
+                using (Stream stream = new FileStream(dialog.FileName, FileMode.Create))
+                {
+                    enc.Frames.Add(BitmapFrame.Create((BitmapSource)ImageEdit1.Source));
+                    enc.Save(stream);
+                }
+            }
+
         }
 
         //顔検出
@@ -341,42 +371,42 @@ namespace ImageViewer.Views
         //切取
         private void Btn_Clip_Click(object sender, RoutedEventArgs e)
         {
-            Bitmap bmpBase = BitmapImage2Bitmap((BitmapImage)ImageEdit1.Source);
+            //Bitmap bmpBase = BitmapImage2Bitmap((BitmapImage)ImageEdit1.Source);
 
-            if ( bmpBase != null )
-            {
-                //クリップ領域を表示画像領域(imageGrid)の座標に変換
-                System.Windows.Rect r = GetClipRect();
-                System.Windows.Point p1 = clipCanvas.TranslatePoint(r.TopLeft, imageGrid);
-                System.Windows.Point p2 = clipCanvas.TranslatePoint(r.BottomRight, imageGrid);
-                double wpfWidth = imageGrid.ActualWidth;
-                double wpfHeight = imageGrid.ActualHeight;
+            //if ( bmpBase != null )
+            //{
+            //    //クリップ領域を表示画像領域(imageGrid)の座標に変換
+            //    System.Windows.Rect r = GetClipRect();
+            //    System.Windows.Point p1 = clipCanvas.TranslatePoint(r.TopLeft, imageGrid);
+            //    System.Windows.Point p2 = clipCanvas.TranslatePoint(r.BottomRight, imageGrid);
+            //    double wpfWidth = imageGrid.ActualWidth;
+            //    double wpfHeight = imageGrid.ActualHeight;
 
-                double r1 = (double)bmpBase.Width / wpfWidth;
-                double r2 = (double)bmpBase.Height / wpfHeight;
+            //    double r1 = (double)bmpBase.Width / wpfWidth;
+            //    double r2 = (double)bmpBase.Height / wpfHeight;
 
-                {
+            //    {
 
-                    double x1 = Math.Min((double)bmpBase.Width * p1.X / wpfWidth, bmpBase.Width);
-                    double y1 = Math.Min((double)bmpBase.Height * p1.Y / wpfHeight, bmpBase.Height);
-                    double x2 = Math.Min((double)bmpBase.Width * p2.X / wpfWidth, bmpBase.Width);
-                    double y2 = Math.Min((double)bmpBase.Height * p2.Y / wpfHeight, bmpBase.Height);
-                    x1 = x1 * r1;
-                    y1 = y1 * r2;
-                    x2 = x2 * r1;
-                    y2 = y2 * r2;
-                    double w = x2 - x1;
-                    double h = y2 - y1;
-                    System.Drawing.Rectangle rect
-                       = new System.Drawing.Rectangle((int)x1, (int)y1, (int)w, (int)h);
+            //        double x1 = Math.Min((double)bmpBase.Width * p1.X / wpfWidth, bmpBase.Width);
+            //        double y1 = Math.Min((double)bmpBase.Height * p1.Y / wpfHeight, bmpBase.Height);
+            //        double x2 = Math.Min((double)bmpBase.Width * p2.X / wpfWidth, bmpBase.Width);
+            //        double y2 = Math.Min((double)bmpBase.Height * p2.Y / wpfHeight, bmpBase.Height);
+            //        x1 = x1 * r1;
+            //        y1 = y1 * r2;
+            //        x2 = x2 * r1;
+            //        y2 = y2 * r2;
+            //        double w = x2 - x1;
+            //        double h = y2 - y1;
+            //        System.Drawing.Rectangle rect
+            //           = new System.Drawing.Rectangle((int)x1, (int)y1, (int)w, (int)h);
 
-                    //画像を切り抜き
-                    var bmpCliped = CreateClipBitmap(bmpBase, rect);
-                    IntPtr hbitmap = bmpCliped.GetHbitmap();
-                    ImageEdit1.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hbitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); ;
+            //        //画像を切り抜き
+            //        var bmpCliped = CreateClipBitmap(bmpBase, rect);
+            //        IntPtr hbitmap = bmpCliped.GetHbitmap();
+            //        ImageEdit1.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hbitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); ;
 
-                }
-            }
+            //    }
+            //}
         }
 
         private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
