@@ -8,6 +8,8 @@ using System.Windows.Media.Imaging;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
+using Microsoft.Win32;
+using System.IO;
 
 namespace ImageViewer.Views
 {
@@ -19,6 +21,60 @@ namespace ImageViewer.Views
         private string _ImageFilePath;
         private BitmapImage _bmp;
         private int _angleCount = 0;
+
+        #region 切り抜き領域指定
+        private bool isDown;
+        private System.Windows.Point p1;
+        private System.Windows.Point p2;
+
+        private System.Windows.Rect GetClipRect()
+        {
+            double x1 = Math.Max(0, Math.Min(p1.X, p2.X));
+            double y1 = Math.Max(0, Math.Min(p1.Y, p2.Y));
+            double x2 = Math.Max(x1, Math.Max(p1.X, p2.X));
+            double y2 = Math.Max(y1, Math.Max(p1.Y, p2.Y));
+            double w = Math.Abs(x2 - x1);
+            double h = Math.Abs(y2 - y1);
+            return new System.Windows.Rect(x1, y1, w, h);
+        }
+        private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Canvas canvas = (Canvas)sender;
+            p1 = e.GetPosition(canvas);
+            isDown = true;
+            Mouse.Capture((Canvas)sender);
+        }
+
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isDown)
+            {
+                Canvas canvas = (Canvas)sender;
+                p2 = e.GetPosition(canvas);
+
+                System.Windows.Rect rect = GetClipRect();
+                Canvas.SetLeft(clipRect, rect.Left);
+                Canvas.SetTop(clipRect, rect.Top);
+                clipRect.Width = rect.Width;
+                clipRect.Height = rect.Height;
+            }
+        }
+        private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            Mouse.Capture(null);
+            isDown = false;
+        }
+
+        private void slScale_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (this.clipRect != null)
+            {
+                //切り取り領域の点線の太さを縮尺の逆数で
+                clipRect.StrokeThickness = 2 / e.NewValue;
+            }
+        }
+
+        #endregion
 
         public EditView(string filePath)
         {
@@ -140,11 +196,7 @@ namespace ImageViewer.Views
             ImageEdit1.Source = transformedBitmap;
         }
 
-        private void Btn_Expansion_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
+        //マウスホイールで画像の拡大縮小
         private void ImageEdit1_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             // スケールの値を変えることでホイールを動かした時の拡大率を制御できます
@@ -182,7 +234,8 @@ namespace ImageViewer.Views
             }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        //グレースケール
+        private void Btn_Gray_Click(object sender, RoutedEventArgs e)
         {
             //グレースケール変換
             var src = new Mat(_ImageFilePath);
@@ -199,38 +252,15 @@ namespace ImageViewer.Views
             ImageEdit1.Source = bitmapSource;
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        //セピア
+        private void Btn_Sepia_Click(object sender, RoutedEventArgs e)
         {
-            Bitmap hBitmap = new Bitmap(_ImageFilePath);
-
-            //セピア調の画像の描画先となるImageオブジェクトを作成
-            Bitmap newImg = new Bitmap(hBitmap.Width, hBitmap.Height);
-
-            //newImgのGraphicsオブジェクトを取得
-            Graphics g = Graphics.FromImage(newImg);
-
-            //ColorMatrixオブジェクトの作成
-            //セピア調に変換するための行列を指定する
-            System.Drawing.Imaging.ColorMatrix cm =
-                new System.Drawing.Imaging.ColorMatrix(
-                    new float[][] {
-                new float[] {.393f, .349f, .272f, 0, 0},
-                new float[] {.769f, .686f, .534f, 0, 0},
-                new float[] {.189f, .168f, .131f, 0, 0},
-                new float[] {0, 0, 0, 1, 0},
-                new float[] {0, 0, 0, 0, 1}
-                    });
-            //ImageAttributesオブジェクトの作成
-            System.Drawing.Imaging.ImageAttributes ia = new System.Drawing.Imaging.ImageAttributes();
-            //ColorMatrixを設定する
-            ia.SetColorMatrix(cm);
-
-            //ImageAttributesを使用してセピア調に描画
-            g.DrawImage(hBitmap, new Rectangle(0, 0, hBitmap.Width, hBitmap.Height), 0, 0, hBitmap.Width, hBitmap.Height, GraphicsUnit.Pixel, ia);
-
-            //リソースを解放する
-            g.Dispose();
-
+            //グレースケール変換
+            var src = new Mat(_ImageFilePath);
+            var dst = new Mat();
+            Cv2.CvtColor(src, dst, ColorConversionCodes.BGRA2GRAY);
+            Cv2.ApplyColorMap(src, dst, ColormapTypes.Pink);
+            System.Drawing.Bitmap hBitmap = dst.ToBitmap();
             IntPtr handle = hBitmap.GetHbitmap();
             var bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
                 handle,
@@ -238,12 +268,41 @@ namespace ImageViewer.Views
                 System.Windows.Int32Rect.Empty,
                 System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()
             );
-
             ImageEdit1.Source = bitmapSource;
 
         }
 
-        private void Button_Click_2(object sender, RoutedEventArgs e)
+        //戻す
+        private void Btn_Reset_Click(object sender, RoutedEventArgs e)
+        {
+            ImageEdit1.Source = _bmp;
+        }
+
+        //保存
+        private void Btn_Save_Click(object sender, RoutedEventArgs e)
+        {
+            // ファイル保存ダイアログを生成します。
+            var dialog = new SaveFileDialog();
+
+            // フィルターを設定します。
+            // この設定は任意です。
+            dialog.Filter = "画像ファイル|*.jpg|*.png|*.bmp|全てのファイル(*.*)|*.*";
+
+            // ファイル保存ダイアログを表示します。
+            var result = dialog.ShowDialog() ?? false;
+
+            // 保存ボタン以外が押下された場合
+            if (!result)
+            {
+                // 終了します。
+                return;
+            }
+
+
+        }
+
+        //顔検出
+        private void Btn_FaceDetect_Click(object sender, RoutedEventArgs e)
         {
 
             //顔の矩形を抽出
@@ -264,11 +323,73 @@ namespace ImageViewer.Views
                 Cv2.ImShow("face_show", mat);
             }
 
+
         }
 
-        private void Button_Click_3(object sender, RoutedEventArgs e)
+        /// <summary> 画像を切り出す </summary>
+        /// <param name="bmpBase">元画像</param>
+        /// <param name="rect">切り出し範囲</param>
+        /// <returns>切り出した画像</returns>
+        public static Bitmap CreateClipBitmap(Bitmap bmpBase, Rectangle rect)
         {
-            ImageEdit1.Source = _bmp;
+            Bitmap bmp = new Bitmap(rect.Width, rect.Height, bmpBase.PixelFormat);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.DrawImage(bmpBase, new Rectangle(0, 0, bmp.Width, bmp.Height), rect, GraphicsUnit.Pixel);
+            }
+            return bmp;
+        }
+
+        //切取
+        private void Btn_Clip_Click(object sender, RoutedEventArgs e)
+        {
+            Bitmap bmpBase = BitmapImage2Bitmap((BitmapImage)ImageEdit1.Source);
+
+            if ( bmpBase != null )
+            {
+                //クリップ領域を表示画像領域(imageGrid)の座標に変換
+                System.Windows.Rect r = GetClipRect();
+                System.Windows.Point p1 = clipCanvas.TranslatePoint(r.TopLeft, imageGrid);
+                System.Windows.Point p2 = clipCanvas.TranslatePoint(r.BottomRight, imageGrid);
+                double wpfWidth = imageGrid.ActualWidth;
+                double wpfHeight = imageGrid.ActualHeight;
+                {
+
+                    double x1 = Math.Min((double)bmpBase.Width * p1.X / wpfWidth, bmpBase.Width);
+                    double y1 = Math.Min((double)bmpBase.Height * p1.Y / wpfHeight, bmpBase.Height);
+                    double x2 = Math.Min((double)bmpBase.Width * p2.X / wpfWidth, bmpBase.Width);
+                    double y2 = Math.Min((double)bmpBase.Height * p2.Y / wpfHeight, bmpBase.Height);
+                    x1 = x1 * (bmpBase.Width / wpfWidth);
+                    y1 = y1 * (bmpBase.Height / wpfHeight);
+                    x2 = x2 * (bmpBase.Width / wpfWidth);
+                    y2 = y2 * (bmpBase.Height / wpfHeight);
+                    double w = x2 - x1;
+                    double h = y2 - y1;
+                    System.Drawing.Rectangle rect
+                       = new System.Drawing.Rectangle((int)x1, (int)y1, (int)w, (int)h);
+
+                    //回転後画像を切り抜き
+                    var bmpCliped = CreateClipBitmap(bmpBase, rect);
+                    IntPtr hbitmap = bmpCliped.GetHbitmap();
+                    ImageEdit1.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hbitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); ;
+
+                }
+            }
+        }
+
+        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        {
+            // BitmapImage bitmapImage = new BitmapImage(new Uri("../Images/test.png", UriKind.Relative));
+
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
         }
     }
 }
