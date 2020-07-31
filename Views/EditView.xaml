@@ -11,10 +11,10 @@
     <Grid>
         <!--<Grid HorizontalAlignment="Left" Height="520" Margin="10,10,0,0" VerticalAlignment="Top" Width="980">-->
         <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible">
-            <Grid HorizontalAlignment="Left" Height="520" Margin="10,10,0,0" VerticalAlignment="Top" Width="980" Background="Black">
+            <Grid HorizontalAlignment="Left" Height="520" Margin="0,0,0,0" VerticalAlignment="Top" Width="980" Background="Black">
                 <!-- 画像表示領域 -->
                 <Grid x:Name="imageGrid" VerticalAlignment="Top" HorizontalAlignment="Left">
-                    <Image x:Name="ImageEdit1" Height="500" Margin="10,10,0,0" Width="960" MouseWheel="ImageEdit1_MouseWheel" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="Uniform">
+                    <Image x:Name="ImageEdit1" Height="500" Margin="0,0,0,0" Width="960" MouseWheel="ImageEdit1_MouseWheel" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="Uniform">
                         <Image.LayoutTransform>
                             <RotateTransform Angle="{Binding Path=Value,ElementName=slAngle}" />
                         </Image.LayoutTransform>

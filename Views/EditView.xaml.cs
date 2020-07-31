@@ -297,8 +297,6 @@ namespace ImageViewer.Views
                 // 終了します。
                 return;
             }
-
-
         }
 
         //顔検出
@@ -353,22 +351,26 @@ namespace ImageViewer.Views
                 System.Windows.Point p2 = clipCanvas.TranslatePoint(r.BottomRight, imageGrid);
                 double wpfWidth = imageGrid.ActualWidth;
                 double wpfHeight = imageGrid.ActualHeight;
+
+                double r1 = (double)bmpBase.Width / wpfWidth;
+                double r2 = (double)bmpBase.Height / wpfHeight;
+
                 {
 
                     double x1 = Math.Min((double)bmpBase.Width * p1.X / wpfWidth, bmpBase.Width);
                     double y1 = Math.Min((double)bmpBase.Height * p1.Y / wpfHeight, bmpBase.Height);
                     double x2 = Math.Min((double)bmpBase.Width * p2.X / wpfWidth, bmpBase.Width);
                     double y2 = Math.Min((double)bmpBase.Height * p2.Y / wpfHeight, bmpBase.Height);
-                    x1 = x1 * (bmpBase.Width / wpfWidth);
-                    y1 = y1 * (bmpBase.Height / wpfHeight);
-                    x2 = x2 * (bmpBase.Width / wpfWidth);
-                    y2 = y2 * (bmpBase.Height / wpfHeight);
+                    x1 = x1 * r1;
+                    y1 = y1 * r2;
+                    x2 = x2 * r1;
+                    y2 = y2 * r2;
                     double w = x2 - x1;
                     double h = y2 - y1;
                     System.Drawing.Rectangle rect
                        = new System.Drawing.Rectangle((int)x1, (int)y1, (int)w, (int)h);
 
-                    //回転後画像を切り抜き
+                    //画像を切り抜き
                     var bmpCliped = CreateClipBitmap(bmpBase, rect);
                     IntPtr hbitmap = bmpCliped.GetHbitmap();
                     ImageEdit1.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hbitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); ;
